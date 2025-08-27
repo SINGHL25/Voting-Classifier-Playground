@@ -1,1 +1,7 @@
+streamlit>=1.25.0
+scikit-learn>=1.2.0
+pandas
+numpy
+matplotlib
+xgboost  # optional: required only if you want to include XGBoost later
 
