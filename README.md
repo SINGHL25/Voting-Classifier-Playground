@@ -1,23 +1,19 @@
 # Voting-Classifier-Playground
-# Logs_Analyser_4_in_1
+# 🧠 Streamlit ML Voting Classifier App
 
-A **4-in-1 Logs & Data Analysis Tool** using `Streamlit` + `Plotly`.  
-Supports timeline plots, counts, and root cause diagrams.  
+This is a simple **Streamlit web app** where you can upload a dataset (CSV), train machine learning models (Logistic Regression, SVM, Random Forest), and combine them using a **Voting Classifier** (hard voting).
 
----
-
-## 🚀 Features
-- Upload CSV logs/data.
-- Auto-generate timeline plots.
-- Count visualizations.
-- Root cause diagram.
-- Works with any structured dataset (Iris sample included).
+It also supports:
+- **Automatic Hyperparameter Tuning** with GridSearchCV
+- **Model Export/Import** (`.pkl` files)
+- **Interactive Sidebar Explanations**
+- **Example Dataset (Iris)** included
 
 ---
 
-## 📦 Installation
+## 🚀 Getting Started
 
-```bash
-git clone https://github.com/YOUR-USERNAME/Logs_Analyser_4_in_1.git
-cd Logs_Analyser_4_in_1
-pip install -r requirements.txt
+1. Clone this repo:
+   ```bash
+   git clone https://github.com/yourusername/voting-classifier-app.git
+   cd voting-classifier-app
