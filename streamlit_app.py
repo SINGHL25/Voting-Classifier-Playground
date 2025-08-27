@@ -1,15 +1,18 @@
 
 # app.py
+# app.py
 import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
+import matplotlib.pyplot as plt
 
 from sklearn.model_selection import train_test_split, GridSearchCV
 from sklearn.linear_model import LogisticRegression
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.metrics import classification_report, accuracy_score
+from datetime import datetime
 
 # -------------------------------
 # Sidebar Info
@@ -28,11 +31,11 @@ This helps improve robustness and reduce overfitting.
 # -------------------------------
 # Main App
 # -------------------------------
-st.title("🗳️ Voting Classifier App with Auto-Tuning & Export")
+st.title("🗳️ Voting Classifier Playground with Auto-Tuning & Export")
 
 # File Upload
 uploaded_file = st.file_uploader("Upload CSV Dataset", type=["csv"])
-use_example = st.checkbox("Use Example Dataset (iris.csv)")
+use_example = st.checkbox("Use Example Dataset (example_data.csv)")
 
 if uploaded_file:
     df = pd.read_csv(uploaded_file)
@@ -69,6 +72,9 @@ param_grid = {
     "max_depth": st.multiselect("max_depth", [None, 5, 10, 20], default=[None, 10]),
 }
 
+if not param_grid["n_estimators"]: param_grid["n_estimators"] = [100]
+if not param_grid["max_depth"]: param_grid["max_depth"] = [None]
+
 if st.button("Run GridSearchCV for Random Forest"):
     rf = RandomForestClassifier(random_state=random_state)
     grid = GridSearchCV(rf, param_grid, cv=3, n_jobs=-1)
@@ -99,22 +105,56 @@ if st.button("Train Voting Classifier"):
     st.text("Classification Report:")
     st.text(classification_report(y_test, y_pred))
 
-    # Save model
-    joblib.dump(voting_clf, "voting_classifier.pkl")
-    st.success("✅ Model trained and saved as `voting_classifier.pkl`")
+    # Save model with timestamp
+    model_name = f"voting_classifier_{datetime.now().strftime('%Y%m%d_%H%M%S')}.pkl"
+    joblib.dump(voting_clf, model_name)
+    st.success(f"✅ Model trained and saved as `{model_name}`")
+
+    # -------------------------------
+    # Decision Boundary (2D only)
+    # -------------------------------
+    st.subheader("🌐 Decision Boundary (2D features only)")
+    if X.shape[1] >= 2:
+        f1 = st.selectbox("Feature 1", X.columns, index=0)
+        f2 = st.selectbox("Feature 2", X.columns, index=1)
+
+        X_plot = X_train[[f1, f2]]
+        model_2d = VotingClassifier(
+            estimators=[("lr", lr), ("svm", svm), ("rf", best_rf)], voting="hard"
+        ).fit(X_plot, y_train)
+
+        # Mesh grid
+        x_min, x_max = X_plot[f1].min() - 1, X_plot[f1].max() + 1
+        y_min, y_max = X_plot[f2].min() - 1, X_plot[f2].max() + 1
+        xx, yy = np.meshgrid(np.linspace(x_min, x_max, 200),
+                             np.linspace(y_min, y_max, 200))
+        Z = model_2d.predict(np.c_[xx.ravel(), yy.ravel()])
+        Z = Z.reshape(xx.shape)
+
+        plt.figure(figsize=(6, 4))
+        plt.contourf(xx, yy, Z, alpha=0.3)
+        plt.scatter(X_plot[f1], X_plot[f2], c=y_train, edgecolor="k", s=40)
+        plt.xlabel(f1); plt.ylabel(f2); plt.title("Decision Boundary")
+        st.pyplot(plt.gcf())
 
 # -------------------------------
 # Load Saved Model
 # -------------------------------
 if st.button("Load Existing Model"):
     try:
-        loaded_model = joblib.load("voting_classifier.pkl")
-        st.success("Loaded saved model successfully!")
-        y_pred = loaded_model.predict(X_test)
-        st.write("**Accuracy (Loaded Model):**", accuracy_score(y_test, y_pred))
-    except FileNotFoundError:
-        st.error("No saved model found. Train one first!")
+        model_files = [f for f in os.listdir() if f.endswith(".pkl")]
+        if model_files:
+            latest_model = sorted(model_files)[-1]
+            loaded_model = joblib.load(latest_model)
+            st.success(f"Loaded saved model: {latest_model}")
+            y_pred = loaded_model.predict(X_test)
+            st.write("**Accuracy (Loaded Model):**", accuracy_score(y_test, y_pred))
+        else:
+            st.error("No saved model found. Train one first!")
+    except Exception as e:
+        st.error(f"Error loading model: {e}")
 
 # Footer
 st.markdown("---")
 st.markdown("💡 Tip: Try uploading your own dataset, or use the provided **example_data.csv** for testing.")
+
